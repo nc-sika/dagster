@@ -354,6 +354,9 @@ class ExternalRepositoryOrigin(
     def get_id(self) -> str:
         return create_snapshot_id(self)
 
+    def get_label(self) -> str:
+        return f"{self.repository_name}@{self.repository_location_origin.location_name}"
+
     def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
         return ExternalPipelineOrigin(self, pipeline_name)
 
