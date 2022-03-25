@@ -21,6 +21,7 @@ from .base import ScheduleStorage
 from .migration import (
     OPTIONAL_SCHEDULE_DATA_MIGRATIONS,
     REQUIRED_SCHEDULE_DATA_MIGRATIONS,
+    SCHEDULE_JOBS_SELECTOR_ID,
     SCHEDULE_TICKS_SELECTOR_ID,
 )
 from .schema import InstigatorTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
@@ -49,7 +50,7 @@ class SqlScheduleStorage(ScheduleStorage):
     ):
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
-        if self.has_instigators_table():
+        if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
             query = db.select(
                 [InstigatorTable.c.instigator_body, InstigatorTable.c.selector_id]
             ).select_from(InstigatorTable)
@@ -59,7 +60,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 query = query.where(InstigatorTable.c.instigator_type == instigator_type.value)
         else:
             query = db.select([JobTable.c.job_body, JobTable.c.selector_id]).select_from(
-                InstigatorTable
+                JobTable
             )
             if repository_origin_id:
                 query = query.where(JobTable.c.repository_origin_id == repository_origin_id)
@@ -73,7 +74,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.str_param(origin_id, "origin_id")
         check.str_param(selector_id, "selector_id")
 
-        if self.has_instigators_table():
+        if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
             query = (
                 db.select([InstiagorTable.c.instigator_body])
                 .select_from(InstigatorTable)
