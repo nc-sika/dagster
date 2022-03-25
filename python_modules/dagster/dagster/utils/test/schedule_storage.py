@@ -248,7 +248,7 @@ class TestScheduleStorage:
 
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
-        ticks = storage.get_ticks("my_schedule")
+        ticks = storage.get_ticks("my_schedule", "my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.instigator_name == "my_schedule"
@@ -268,7 +268,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_schedule")
+        ticks = storage.get_ticks("my_schedule", "my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.instigator_name == "my_schedule"
@@ -288,7 +288,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_schedule")
+        ticks = storage.get_ticks("my_schedule", "my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.instigator_name == "my_schedule"
@@ -311,7 +311,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_schedule")
+        ticks = storage.get_ticks("my_schedule", "my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id > 0
@@ -465,7 +465,7 @@ class TestScheduleStorage:
         tick = storage.create_tick(self.build_sensor_tick(current_time))
         tick_id = tick.tick_id
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id == tick_id
@@ -485,14 +485,16 @@ class TestScheduleStorage:
         storage.create_tick(self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED))
         storage.create_tick(self.build_sensor_tick(four_days_ago, TickStatus.SKIPPED))
         storage.create_tick(self.build_sensor_tick(one_day_ago, TickStatus.SKIPPED))
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 3
 
-        ticks = storage.get_ticks("my_sensor", after=five_days_ago + 1)
+        ticks = storage.get_ticks("my_sensor", "my_sensor", after=five_days_ago + 1)
         assert len(ticks) == 2
-        ticks = storage.get_ticks("my_sensor", before=one_day_ago - 1)
+        ticks = storage.get_ticks("my_sensor", "my_sensor", before=one_day_ago - 1)
         assert len(ticks) == 2
-        ticks = storage.get_ticks("my_sensor", after=five_days_ago + 1, before=one_day_ago - 1)
+        ticks = storage.get_ticks(
+            "my_sensor", "my_sensor", after=five_days_ago + 1, before=one_day_ago - 1
+        )
         assert len(ticks) == 1
 
     def test_update_sensor_tick_to_success(self, storage):
@@ -506,7 +508,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id > 0
@@ -527,7 +529,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id > 0
@@ -549,7 +551,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id > 0
@@ -573,15 +575,17 @@ class TestScheduleStorage:
         one_minute_tick = storage.create_tick(
             self.build_sensor_tick(one_minute_ago, TickStatus.SKIPPED)
         )
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 3
 
         latest_tick = ticks[0]
         assert latest_tick.tick_id == one_minute_tick.tick_id
 
-        storage.purge_ticks("my_sensor", "my_sensor", TickStatus.SKIPPED, now.subtract(minutes=2).timestamp())
+        storage.purge_ticks(
+            "my_sensor", "my_sensor", TickStatus.SKIPPED, now.subtract(minutes=2).timestamp()
+        )
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 2
 
     def test_ticks_filtered(self, storage):
@@ -596,24 +600,26 @@ class TestScheduleStorage:
             )
         )
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 4
 
-        started = storage.get_ticks("my_sensor", statuses=[TickStatus.STARTED])
+        started = storage.get_ticks("my_sensor", "my_sensor", statuses=[TickStatus.STARTED])
         assert len(started) == 1
 
-        successes = storage.get_ticks("my_sensor", statuses=[TickStatus.SUCCESS])
+        successes = storage.get_ticks("my_sensor", "my_sensor", statuses=[TickStatus.SUCCESS])
         assert len(successes) == 1
 
-        skips = storage.get_ticks("my_sensor", statuses=[TickStatus.SKIPPED])
+        skips = storage.get_ticks("my_sensor", "my_sensor", statuses=[TickStatus.SKIPPED])
         assert len(skips) == 1
 
-        failures = storage.get_ticks("my_sensor", statuses=[TickStatus.FAILURE])
+        failures = storage.get_ticks("my_sensor", "my_sensor", statuses=[TickStatus.FAILURE])
         assert len(failures) == 1
 
         # everything but skips
         non_skips = storage.get_ticks(
-            "my_sensor", statuses=[TickStatus.STARTED, TickStatus.SUCCESS, TickStatus.FAILURE]
+            "my_sensor",
+            "my_sensor",
+            statuses=[TickStatus.STARTED, TickStatus.SUCCESS, TickStatus.FAILURE],
         )
         assert len(non_skips) == 3
 
