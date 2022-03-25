@@ -18,7 +18,11 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
-from .migration import OPTIONAL_SCHEDULE_DATA_MIGRATIONS, REQUIRED_SCHEDULE_DATA_MIGRATIONS, SCHEDULE_TICKS_SELECTOR_ID
+from .migration import (
+    OPTIONAL_SCHEDULE_DATA_MIGRATIONS,
+    REQUIRED_SCHEDULE_DATA_MIGRATIONS,
+    SCHEDULE_TICKS_SELECTOR_ID,
+)
 from .schema import InstigatorTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
 
 
@@ -40,13 +44,15 @@ class SqlScheduleStorage(ScheduleStorage):
     def _deserialize_rows(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-    def all_instigator_state(self, repository_origin_id=None, repository_name=None, instigator_type=None):
+    def all_instigator_state(
+        self, repository_origin_id=None, repository_name=None, instigator_type=None
+    ):
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
         if self.has_instigators_table():
-            query = db.select([InstigatorTable.c.instigator_body, InstigatorTable.c.selector_id]).select_from(
-                InstigatorTable
-            )
+            query = db.select(
+                [InstigatorTable.c.instigator_body, InstigatorTable.c.selector_id]
+            ).select_from(InstigatorTable)
             if repository_name:
                 query = query.where(InstigatorTable.c.repository_name == repository_name)
             if instigator_type:
@@ -301,7 +307,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     db.and_(
                         JobTickTable.c.selector_id == None,
                         JobTickTable.c.job_origin_id == origin_id,
-                    )
+                    ),
                 )
             )
         else:
@@ -383,7 +389,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     db.and_(
                         JobTickTable.c.selector_id == None,
                         JobTickTable.c.job_origin_id == origin_id,
-                    )
+                    ),
                 )
             )
         else:
@@ -391,7 +397,6 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             conn.execute(query)
-
 
     def wipe(self):
         """Clears the schedule storage."""
