@@ -4,12 +4,16 @@ from dagster import check
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.utils import merge_dicts
+from dagster.utils import make_readonly_value, merge_dicts
 
 if TYPE_CHECKING:
     from . import K8sRunLauncher
 
 from .job import DagsterK8sJobConfig
+
+
+def _dedupe_list(values):
+    return list(set([make_readonly_value(value) for value in values]))
 
 
 class K8sContainerContext(
@@ -66,17 +70,17 @@ class K8sContainerContext(
             image_pull_policy=(
                 other.image_pull_policy if other.image_pull_policy else self.image_pull_policy
             ),
-            image_pull_secrets=other.image_pull_secrets + self.image_pull_secrets,
+            image_pull_secrets=_dedupe_list(other.image_pull_secrets + self.image_pull_secrets),
             service_account_name=(
                 other.service_account_name
                 if other.service_account_name
                 else self.service_account_name
             ),
-            env_config_maps=other.env_config_maps + self.env_config_maps,
-            env_secrets=other.env_secrets + self.env_secrets,
-            env_vars=other.env_vars + self.env_vars,
-            volume_mounts=other.volume_mounts + self.volume_mounts,
-            volumes=other.volumes + self.volumes,
+            env_config_maps=_dedupe_list(other.env_config_maps + self.env_config_maps),
+            env_secrets=_dedupe_list(other.env_secrets + self.env_secrets),
+            env_vars=_dedupe_list(other.env_vars + self.env_vars),
+            volume_mounts=_dedupe_list(other.volume_mounts + self.volume_mounts),
+            volumes=_dedupe_list(other.volumes + self.volumes),
             labels=merge_dicts(other.labels, self.labels),
             namespace=other.namespace if other.namespace else self.namespace,
         )
